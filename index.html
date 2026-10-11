@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Ders Rehberi — Eksiksiz Kişisel Çalışma Alanı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f1f5f9; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        
+        /* 100. GÜN ÖZEL HAREKETLİ ARKA PLAN EFEKTİ */
+        .day-100-effect {
+            background: linear-gradient(-45deg, #0b0f19, #2e1065, #1e1b4b, #030712);
+            background-size: 400% 400%;
+            animation: gradientBG 10s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body id="mainBody" class="min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- İLK GİRİŞ / PROFİL OLUŞTURMA MODALI -->
+    <div id="onboardingModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-5">
+            <div class="text-center space-y-2">
+                <span class="text-3xl">🎓</span>
+                <h2 class="text-xl font-bold text-white">Ders Rehberi'ne Hoş Geldin!</h2>
+                <p class="text-xs text-slate-400">Sana özel çalışma alanını hazırlayabilmemiz için lütfen bilgilerini gir.</p>
+            </div>
+            <form onsubmit="saveUserProfile(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">ADIN VE SOYADIN</label>
+                    <input type="text" id="userNameInput" required placeholder="Örn: Ahmet Yılmaz" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm outline-none focus:border-indigo-500 transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">CİNSİYETİN</label>
+                    <select id="userGenderInput" class="w-full p-3 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm outline-none focus:border-indigo-500 transition">
+                        <option value="erkek">Erkek</option>
+                        <option value="kadin">Kız</option>
+                        <option value="diger">Belirtmek İstemiyorum</option>
+                    </select>
+                </div>
+                <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-indigo-600/30">
+                    Yolculuğa Başla 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ANA İSKELET -->
+    <div class="app-shell flex flex-1 min-h-screen">
+
+        <!-- SOL MENÜ -->
+        <aside class="sidebar w-64 bg-[#0b0f19] border-r border-slate-800 flex flex-col p-4 shrink-0 select-none">
+            <a href="#" class="brand flex items-center gap-2.5 px-2 py-3 mb-4 text-white font-bold text-lg">
+                <span class="w-8 h-8 rounded-lg bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">📖</span>
+                <span>Ders<span class="text-indigo-400">Rehberi</span></span>
+            </a>
+            
+            <div class="workspace-label text-[10px] font-bold tracking-wider text-slate-500 px-2 mb-2">KİŞİSEL ÇALIŞMA ALANIN</div>
+            
+            <nav class="main-nav space-y-1 flex-1">
+                <button onclick="switchView('discover')" id="nav-discover" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-indigo-400 bg-indigo-600/10 border border-indigo-500/20">
+                    <span>🏠</span> Keşfet
+                </button>
+                <button onclick="switchView('tests')" id="nav-tests" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <span>✍️</span> Mini testler
+                </button>
+                <button onclick="switchView('saved')" id="nav-saved" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <span>🔖</span> Kaydedilenler
+                </button>
+                <button onclick="switchView('progress')" id="nav-progress" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <span>📊</span> İlerlemem
+                </button>
+                <button onclick="switchView('badges')" id="nav-badges" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50">
+                    <span>🏆</span> Rozetlerim
+                </button>
+            </nav>
+
+            <div class="sidebar-note mt-auto bg-gradient-to-br from-slate-800/60 to-slate-900 border border-slate-800 p-3.5 rounded-xl text-xs space-y-1.5">
+                <p class="font-semibold text-slate-200">Her gün biraz,<br/><strong class="text-indigo-400">her gün ileri.</strong></p>
+                <span class="text-[10px] text-slate-400 block">Senin hızın, senin yolculuğun.</span>
+            </div>
+        </aside>
+
+        <!-- MASAÜSTÜ WORKSPACE -->
+        <div class="workspace flex-1 flex flex-col min-w-0 bg-transparent">
+            
+            <!-- ÜST BAR -->
+            <header class="topbar h-16 border-b border-slate-800 px-6 flex items-center justify-between bg-[#0b0f19]/80 backdrop-blur sticky top-0 z-40">
+                <div class="breadcrumb flex items-center gap-2 text-xs text-slate-400 font-medium">
+                    <span>Çalışma alanım</span>
+                    <span>/</span>
+                    <strong id="currentBreadcrumb" class="text-white">Keşfet</strong>
+                </div>
+                <div class="topbar-actions flex items-center gap-4">
+                    <!-- Seri Göstergesi -->
+                    <div class="flex items-center gap-1.5 bg-amber-950/60 border border-amber-800/50 px-3 py-1.5 rounded-full text-amber-400 text-xs font-bold">
+                        🔥 <span id="streakDisplay">1</span> Gün Seri
+                    </div>
+
+                    <button onclick="toggleTheme()" class="theme-toggle px-3 py-1.5 rounded-full border border-slate-700 bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition">
+                        🌓 <span id="themeLabel">Açık tema</span>
+                    </button>
+                    
+                    <!-- Öğrenci Profil Bilgisi -->
+                    <div class="student-profile flex items-center gap-2.5 bg-slate-800/80 border border-slate-700/60 px-3 py-1.5 rounded-xl cursor-pointer" onclick="editProfile()">
+                        <span id="profileAvatar" class="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center text-xs font-bold text-white">Ö</span>
+                        <div class="text-xs">
+                            <strong id="profileNameDisplay" class="block text-slate-200 leading-tight">Öğrenci</strong>
+                            <span class="text-[10px] text-slate-400">Aktif Öğrenci</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- İÇERİK ALANI -->
+            <div class="content-layout flex-1 flex">
+                <main id="mainContent" class="main-content flex-1 p-6 space-y-8 max-w-5xl">
+                    <!-- Dinamik İçerik -->
+                </main>
+
+                <!-- SAĞ PANEL -->
+                <aside class="study-rail w-80 border-l border-slate-800 p-5 hidden xl:block space-y-6 shrink-0">
+                    <div class="rail-heading flex items-center justify-between text-xs font-bold text-slate-400 tracking-wider">
+                        <span>ÇALIŞMA KÖŞEN</span>
+                        <span class="text-indigo-400">✨</span>
+                    </div>
+
+                    <!-- Günün İpucu -->
+                    <div class="daily-tip bg-slate-800/40 border border-slate-800 p-4 rounded-2xl space-y-2">
+                        <div class="flex items-center gap-2 text-amber-400 text-xs font-bold">
+                            <span>💡</span> GÜNÜN İPUCU
+                        </div>
+                        <h3 class="text-sm font-bold text-white leading-snug">Anlamak, ezberlemekten <em class="text-indigo-400 font-normal">daha kalıcıdır.</em></h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">Öğrendiğin bir konuyu kendi cümlelerinle anlatmayı dene!</p>
+                    </div>
+
+                    <!-- Günün Hedefi -->
+                    <div class="daily-goal bg-slate-800/40 border border-slate-800 p-4 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-xs font-bold text-white">Bugün bir adım at</h3>
+                            <span class="text-indigo-400">🎯</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Küçük bir hedef, güzel bir başlangıç.</p>
+                        <div class="flex justify-between items-center text-xs font-semibold text-slate-300">
+                            <span>Bir mini test tamamla</span>
+                            <span id="goalStat">0/1</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div id="goalBar" class="bg-indigo-500 h-full w-0 transition-all duration-300"></div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- FOOTER -->
+            <footer class="workspace-footer border-t border-slate-800 px-6 py-4 flex justify-between items-center text-xs text-slate-500">
+                <span>Ders Rehberi</span>
+                <span>Merakla başlayan her şey, öğrenmeye dönüşür.</span>
+                <span class="text-indigo-400">Birlikte daha ileri ↗</span>
+            </footer>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT & GENİŞLETİLMİŞ TAM DERS KÜTÜPHANESİ -->
+    <script>
+        let userProfile = JSON.parse(localStorage.getItem('dr_user')) || null;
+        let stats = JSON.parse(localStorage.getItem('dr_stats')) || { solvedTests: 0, correctAnswers: 0, badges: ['badge1'], streak: 1, lastLogin: '' };
+        let savedTopics = JSON.parse(localStorage.getItem('dr_saved')) || [];
+
+        // TÜM DERSLERİ KAPSAYAN GENİŞLETİLMİŞ KONU VERİ TABANI
+        const TOPICS_DB = {
+            matematik: [
+                { id: 'm1', title: 'Kesirler', desc: 'Bütünün eş parçaları, sadeleştirme ve dört işlem.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', quiz: { q: '3/4 kesrinin 2 katı kaçtır?', opts: ['3/2', '6/8', '3/8', '6/4'], correct: 0 }, content: 'Kesirler, bir bütünün eş parçalarını ifade eder.' },
+                { id: 'm2', title: 'Ondalık Gösterim', desc: 'Virgüllü sayılar ve basamak değerleri.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', quiz: { q: '0.5 sayısı hangi kesre eşittir?', opts: ['1/4', '1/2', '3/4', '1/5'], correct: 1 }, content: 'Paydası 10, 100, 1000 olan kesirlerin virgülle yazılış biçimidir.' },
+                { id: 'm3', title: 'Oran ve Orantı', desc: 'İki çokluğun karşılaştırılması ve orantı çeşitleri.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', quiz: { q: '4 elmanın 8 armuta oranı nedir?', opts: ['1/2', '2/1', '1/4', '3/4'], correct: 0 }, content: 'İki niceliğin birbirine bölünerek karşılaştırılmasıdır.' },
+                { id: 'm4', title: 'Cebirsel İfadeler', desc: 'Harfli ifadeler, terimler ve işlemler.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', quiz: { q: '2x + 3x ifadesinin eşiti nedir?', opts: ['5x', '6x', '5x²', 'x'], correct: 0 }, content: 'İçinde bilinmeyen bulunduran matematiksel ifadelerdir.' },
+                { id: 'm5', title: 'Tam Sayılar', desc: 'Negatif ve pozitif tam sayılarla işlemler.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', quiz: { q: '-3 ile +5 toplamı kaçtır?', opts: ['-2', '+2', '+8', '-8'], correct: 1 }, content: 'Sayı doğrusunda sıfırın sağında ve solunda yer alan sayılardır.' },
+                { id: 'm6', title: 'Veri Analizi', desc: 'Grafik türleri ve aritmetik ortalama.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', quiz: { q: 'Aritmetik ortalama nasıl hesaplanır?', opts: ['Toplam / Adet', 'Çarpım / Adet', 'Fark', 'En büyük değer'], correct: 0 }, content: 'Verilerin sütun, çizgi ve daire grafiği ile analizi.' },
+                { id: 'm7', title: 'Geometri ve Ölçme', desc: 'Üçgenler, dörtgenler ve alan hesaplama.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', quiz: { q: 'Üçgenin iç açılar toplamı kaçtır?', opts: ['90°', '180°', '360°', '270°'], correct: 1 }, content: 'Şekillerin çevresel ve alansal hesaplama kuralları.' },
+                { id: 'm8', title: 'Çarpanlar ve Katlar', desc: 'EBOB, EKOK ve asal çarpanlar.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', quiz: { q: 'En küçük asal sayı kaçtır?', opts: ['0', '1', '2', '3'], correct: 2 }, content: 'Pozitif tam sayıları kalansız bölen sayılar kümesidir.' },
+                { id: 'm9', title: 'Üslü İfadeler', desc: 'Sayılarda kuvvet hesaplamaları.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', quiz: { q: '2³ işleminin sonucu kaçtır?', opts: ['6', '8', '9', '16'], correct: 1 }, content: 'Tekrarlı çarpımların kısa yoldan gösterimidir.' },
+                { id: 'm10', title: 'Kareköklü İfadeler', desc: 'Tam kare sayılar ve karekök işlemleri.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', quiz: { q: '√64 işleminin sonucu kaçtır?', opts: ['4', '6', '8', '16'], correct: 2 }, content: 'Karesi verilen sayının kökünü bulma işlemidir.' },
+                { id: 'm11', title: 'Olasılık', desc: 'Olayların gerçekleşme olasılığı.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', quiz: { q: 'Kesin olayın olasılık değeri kaçtır?', opts: ['0', '0.5', '1', '-1'], correct: 2 }, content: 'Bir olayın gerçekleşme durumunun oranlanmasıdır.' },
+                { id: 'm12', title: 'Doğrusal Denklemler', desc: 'Koordinat sistemi ve eğim grafikleri.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', quiz: { q: 'y = 2x + 1 doğrusunda x=1 için y kaçtır?', opts: ['2', '3', '4', '1'], correct: 1 }, content: 'İki bilinmeyenli doğrusal denklemlerin grafik gösterimidir.' }
+            ],
+            fen: [
+                { id: 'f1', title: 'Mevsimlerin Oluşumu', desc: 'Dünya ekseni ve dönme hareketleri.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', quiz: { q: 'Eksen eğikliği kaç derecedir?', opts: ['23° 27\'', '45°', '90°', '0°'], correct: 0 }, content: 'Mevsimlerin oluşumundaki temel faktörler.' },
+                { id: 'f2', title: 'DNA ve Genetik Kod', desc: 'DNA, gen, kromozom yapısı.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', quiz: { q: 'DNA yapı birimi nedir?', opts: ['Kromozom', 'Gen', 'Nükleotit', 'Hücre'], correct: 2 }, content: 'Hücrenin yönetici molekülü olan DNA yapısı.' },
+                { id: 'f3', title: 'Hücre ve Bölünmeler', desc: 'Mitoz ve mayoz bölünme aşamaları.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', quiz: { q: 'Üreme hücreleri hangi bölünmeyle oluşur?', opts: ['Mitoz', 'Mayoz', 'Yarılma', 'Döllenme'], correct: 1 }, content: 'Canlılarda büyüme ve üremeyi sağlayan hücre bölünmeleri.' },
+                { id: 'f4', title: 'Basınç', desc: 'Katı, sıvı ve gaz basıncı ilkeleri.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', quiz: { q: 'Katı basıncı yüzey alanı küçüldükçe nasıl değişir?', opts: ['Artar', 'Azalır', 'Değişmez', 'Sıfırlanır'], correct: 0 }, content: 'Birim yüzeye dik etki eden kuvvet ilişkileri.' },
+                { id: 'f5', title: 'Madde ve Endüstri', desc: 'Periyodik sistem ve fiziksel/kimyasal değişimler.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', quiz: { q: 'Periyodik tabloda yatay sıralara ne denir?', opts: ['Grup', 'Periyot', 'Blok', 'Sütun'], correct: 1 }, content: 'Elementlerin sınıflandırılması ve kimyasal tepkimeler.' },
+                { id: 'f6', title: 'Basit Makineler', desc: 'Kaldıraçlar, makaralar ve eğik düzlem.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', quiz: { q: 'Sabit makara işten kazanç sağlar mı?', opts: ['Evet', 'Hayır', 'Bazen', 'Yalnızca ağır yükte'], correct: 1 }, content: 'Kuvvetten veya yoldan kazanç sağlayan düzenekler.' }
+            ],
+            turkce: [
+                { id: 't1', title: 'Fiilimsiler', desc: 'İsim-fiil, sıfat-fiil ve zarf-fiil.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', quiz: { q: '“Giden” kelimesi hangi fiilimsidir?', opts: ['İsim-fiil', 'Sıfat-fiil', 'Zarf-fiil', 'Fiil'], correct: 1 }, content: 'Eylemlerden türeyen özel sözcük türleri.' },
+                { id: 't2', title: 'Sözcükte Anlam', desc: 'Gerçek, mecaz ve terim anlam.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', quiz: { q: 'Ağır kelimesi "Ağır söz" cümlesinde ne anlamdadır?', opts: ['Gerçek', 'Mecaz', 'Terim', 'Yan'], correct: 1 }, content: 'Kelimenin cümle bağlamında kazandığı anlamlar.' },
+                { id: 't3', title: 'Cümlenin Ögeleri', desc: 'Yüklem, özne, nesne ve tümleçler.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', quiz: { q: 'Cümlenin temel ögesi hangisidir?', opts: ['Yüklem', 'Özne', 'Nesne', 'Zarf Tümleci'], correct: 0 }, content: 'Cümleyi oluşturan birimlerin incelenmesi.' },
+                { id: 't4', title: 'Noktalama İşaretleri', desc: 'Nokta, virgül, iki nokta ve noktalı virgül kullanımı.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', quiz: { q: 'Tamamlanmış cümlenin sonuna ne konur?', opts: ['Virgül', 'Nokta', 'Ünlem', 'Soru İşareti'], correct: 1 }, content: 'Yazımda anlam karışıklığını önleyen kurallar.' },
+                { id: 't5', title: 'Yazım Kuralları', desc: 'Büyük harfler, de/da ve ki\'nin yazımı.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', quiz: { q: 'Bağlaç olan "de" nasıl yazılır?', opts: ['Ayrı', 'Bitişik', 'Kesmeyle', 'Yazılmaz'], correct: 0 }, content: 'Türkçede doğru ve standart kelime yazımları.' }
+            ],
+            sosyal: [
+                { id: 's1', title: 'Birey ve Toplum', desc: 'Toplumsal rollerimiz ve haklarımız.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', quiz: { q: 'Toplum içindeki rollerimiz doğuştan gelebilir mi?', opts: ['Evet', 'Hayır', 'Asla', 'Sadece okulda'], correct: 0 }, content: 'İnsanın sosyal çevresiyle kurduğu etkileşim.' },
+                { id: 's2', title: 'Harita Bilgisi', desc: 'Ölçekler ve coğrafi konum.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', quiz: { q: 'Kuşbakışı çizimin harita olması için ne gereklidir?', opts: ['Renk', 'Ölçek', 'Çerçeve', 'İsim'], correct: 1 }, content: 'Yeryüzünün küçültülerek düzleme aktarılması.' },
+                { id: 's3', title: 'Kültür ve Miras', desc: 'Tarihi uygarlıklar ve mirası.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', quiz: { q: 'Parayı icad eden ilk uygarlık hangisidir?', opts: ['Sümerler', 'Lidyalılar', 'Hititler', 'Frigler'], correct: 1 }, content: 'Anadolu ve Mezopotamya uygarlıkları tarihi.' },
+                { id: 's4', title: 'İnsanlar, Yerler ve Çevreler', desc: 'İklimler ve nüfus dağılışı.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', quiz: { q: 'Türkiye\'de Karadeniz ikliminin bitki örtüsü nedir?', opts: ['Maki', 'Orman', 'Bozkır', 'Tundra'], correct: 1 }, content: 'Coğrafi koşulların insan yaşamına etkileri.' }
+            ],
+            inkilap: [
+                { id: 'i1', title: 'Bir Kahraman Doğuyor', desc: 'Mustafa Kemal\'in yetiştiği çevre ve hayatı.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', quiz: { q: 'Mustafa Kemal hangi şehirde doğmuştur?', opts: ['İstanbul', 'Selanik', 'Manastır', 'Sofya'], correct: 1 }, content: '20. yüzyıl başlarında Osmanlı ve Mustafa Kemal.' },
+                { id: 'i2', title: 'Milli Uyanış', desc: 'I. Dünya Savaşı ve Kurtuluş Savaşı hazırlık dönemi.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', quiz: { q: 'Milli mücadelenin ilk genelgesi hangisidir?', opts: ['Amasya', 'Havza', 'Erzurum', 'Sivas'], correct: 1 }, content: 'Genelgeler, kongreler ve TBMM\'nin açılışı.' }
+            ],
+            ingilizce: [
+                { id: 'en1', title: 'Friendship', desc: 'Accepting/refusing offers & personal traits.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', quiz: { q: 'Which one is a positive trait?', opts: ['Generous', 'Selfish', 'Stubborn', 'Sneaky'], correct: 0 }, content: 'Expressing preferences and making invitations in English.' },
+                { id: 'en2', title: 'Teen Life', desc: 'Daily routines and music preferences.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', quiz: { q: 'What is the opposite of "boring"?', opts: ['Exciting', 'Bad', 'Slow', 'Tired'], correct: 0 }, content: 'Talking about habits and regular activities.' }
+            ],
+            din: [
+                { id: 'd1', title: 'Kader ve Kaza', desc: 'İrade, kader ve tevekkül kavramları.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', quiz: { q: 'İnsanın kendi seçimlerini yapabilme gücüne ne denir?', opts: ['Kader', 'İrade', 'Ecel', 'Rızık'], correct: 1 }, content: 'Kader inancı ve evrendeki yasalar.' },
+                { id: 'd2', title: 'Zekat ve Sadaka', desc: 'Yardımlaşma ve paylaşma ibadetleri.', video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', quiz: { q: 'Maddi sınırı olmayan gönüllü yardım hangisidir?', opts: ['Zekat', 'Sadaka', 'Öşür', 'Fitre'], correct: 1 }, content: 'İslam dininde toplumsal yardımlaşma köprüsü.' }
+            ]
+        };
+
+        let currentGrade = 8;
+        let currentSubject = 'matematik';
+        let testSubjectFilter = 'matematik';
+
+        window.onload = () => {
+            checkStreakAndRewards();
+            if (!userProfile) {
+                document.getElementById('onboardingModal').style.display = 'flex';
+            } else {
+                document.getElementById('onboardingModal').style.display = 'none';
+                applyUserProfile();
+            }
+            switchView('discover');
+            updateGoalProgress();
+        };
+
+        function checkStreakAndRewards() {
+            const today = new Date().toDateString();
+            if (stats.lastLogin !== today) {
+                if (stats.lastLogin) {
+                    const lastDate = new Date(stats.lastLogin);
+                    const diffDays = Math.floor((new Date() - lastDate) / (1000 * 60 * 60 * 24));
+                    if (diffDays === 1) stats.streak++;
+                    else if (diffDays > 1) stats.streak = 1;
+                } else {
+                    stats.streak = 1;
+                }
+                stats.lastLogin = today;
+                saveStats();
+
+                if (stats.streak > 0 && stats.streak % 10 === 0 && stats.streak < 100) {
+                    alert(`🎉 Tebrikler! ${stats.streak}. güne ulaştın ve özel bir hediye kazandın!`);
+                }
+
+                if (stats.streak >= 100) {
+                    document.getElementById('mainBody').classList.add('day-100-effect');
+                    alert(`🌟 MUHTEŞEM! 100. Gün serisine ulaştın! Özel renkli arka plan efekti aktif edildi!`);
+                }
+            }
+            document.getElementById('streakDisplay').innerText = stats.streak;
+        }
+
+        function saveUserProfile(e) {
+            e.preventDefault();
+            const name = document.getElementById('userNameInput').value;
+            const gender = document.getElementById('userGenderInput').value;
+            userProfile = { name, gender };
+            localStorage.setItem('dr_user', JSON.stringify(userProfile));
+            document.getElementById('onboardingModal').style.display = 'none';
+            applyUserProfile();
+        }
+
+        function editProfile() {
+            const newName = prompt("Adını ve soyadını güncelle:", userProfile ? userProfile.name : "");
+            if (newName) {
+                userProfile.name = newName;
+                localStorage.setItem('dr_user', JSON.stringify(userProfile));
+                applyUserProfile();
+            }
+        }
+
+        function applyUserProfile() {
+            if (!userProfile) return;
+            const initials = userProfile.name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+            document.getElementById('profileAvatar').innerText = initials || 'Ö';
+            document.getElementById('profileNameDisplay').innerText = userProfile.name;
+        }
+
+        function switchView(viewName, param = null) {
+            document.querySelectorAll('.main-nav button').forEach(b => {
+                b.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-white hover:bg-slate-800/50";
+            });
+            const activeBtn = document.getElementById(`nav-${viewName}`);
+            if (activeBtn) {
+                activeBtn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-indigo-400 bg-indigo-600/10 border border-indigo-500/20";
+            }
+
+            const main = document.getElementById('mainContent');
+            const breadcrumb = document.getElementById('currentBreadcrumb');
+
+            if (viewName === 'discover') {
+                breadcrumb.innerText = "Keşfet";
+                renderDiscoverView(main);
+            } else if (viewName === 'tests') {
+                breadcrumb.innerText = "Mini testler";
+                renderTestsView(main);
+            } else if (viewName === 'saved') {
+                breadcrumb.innerText = "Kaydedilenler";
+                renderSavedView(main);
+            } else if (viewName === 'progress') {
+                breadcrumb.innerText = "İlerlemem";
+                renderProgressView(main);
+            } else if (viewName === 'badges') {
+                breadcrumb.innerText = "Rozetlerim";
+                renderBadgesView(main);
+            } else if (viewName === 'topic-detail') {
+                breadcrumb.innerText = "Konu Detayı & Video";
+                renderTopicDetailView(main, param);
+            }
+        }
+
+        function renderDiscoverView(container) {
+            container.innerHTML = `
+                <div class="page-heading space-y-1">
+                    <span class="text-xs font-bold text-indigo-400 tracking-wider">ÖĞRENME YOLCULUĞUN BURADA BAŞLIYOR</span>
+                    <h1 class="text-3xl font-extrabold text-white">Bugün yeni bir şey keşfet.</h1>
+                    <p class="text-sm text-slate-400">Merak et, öğren ve kendi hızında ilerle.</p>
+                </div>
+
+                <section class="space-y-3">
+                    <h2 class="text-sm font-bold text-slate-300">01. Sınıfını seç</h2>
+                    <div class="flex gap-2 overflow-x-auto pb-2">
+                        ${[1,2,3,4,5,6,7,8,9,10,11,12].map(g => `
+                            <button onclick="setGrade(${g})" class="px-4 py-2 rounded-xl text-xs font-bold transition border ${currentGrade === g ? 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-800/60 border-slate-700 text-slate-300 hover:bg-slate-800'}">
+                                ${g}. Sınıf
+                            </button>
+                        `).join('')}
+                    </div>
+                </section>
+
+                <section class="space-y-3">
+                    <h2 class="text-sm font-bold text-slate-300">02. Dersini keşfet</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        ${[
+                            { id: 'matematik', name: 'Matematik', icon: '📐', count: (TOPICS_DB.matematik || []).length + ' konu' },
+                            { id: 'fen', name: 'Fen Bilimleri', icon: '🔬', count: (TOPICS_DB.fen || []).length + ' konu' },
+                            { id: 'turkce', name: 'Türkçe', icon: '📚', count: (TOPICS_DB.turkce || []).length + ' konu' },
+                            { id: 'sosyal', name: 'Sosyal Bilgiler', icon: '🌍', count: (TOPICS_DB.sosyal || []).length + ' konu' },
+                            { id: 'inkilap', name: 'T.C. İnkılap Tarihi', icon: '🇹🇷', count: (TOPICS_DB.inkilap || []).length + ' konu' },
+                            { id: 'ingilizce', name: 'İngilizce', icon: '🗣️', count: (TOPICS_DB.ingilizce || []).length + ' konu' },
+                            { id: 'din', name: 'Din Kültürü', icon: '🌙', count: (TOPICS_DB.din || []).length + ' konu' }
+                        ].map(s => `
+                            <button onclick="setSubject('${s.id}')" class="p-4 rounded-2xl border text-left transition flex flex-col justify-between gap-4 ${currentSubject === s.id ? 'bg-indigo-950/40 border-indigo-500 text-white shadow-md' : 'bg-slate-800/40 border-slate-700 text-slate-300 hover:bg-slate-800'}">
+                                <span class="text-2xl">${s.icon}</span>
+                                <div>
+                                    <strong class="block text-sm font-bold">${s.name}</strong>
+                                    <span class="text-[11px] text-slate-400">${s.count}</span>
+                                </div>
+                            </button>
+                        `).join('')}
+                    </div>
+                </section>
+
+                <section class="space-y-4">
+                    <h2 class="text-sm font-bold text-slate-300">03. Öğrenmeye başla</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="topicGrid"></div>
+                </section>
+            `;
+            loadTopics();
+        }
+
+        function setGrade(g) { currentGrade = g; renderDiscoverView(document.getElementById('mainContent')); }
+        function setSubject(s) { currentSubject = s; renderDiscoverView(document.getElementById('mainContent')); }
+
+        function loadTopics() {
+            const grid = document.getElementById('topicGrid');
+            const topics = TOPICS_DB[currentSubject] || [];
+            grid.innerHTML = topics.map((t, index) => `
+                <div class="bg-slate-800/40 border border-slate-700/80 rounded-2xl p-5 flex items-center justify-between hover:border-indigo-500/50 transition group">
+                    <div class="space-y-1 cursor-pointer flex-1" onclick="switchView('topic-detail', '${t.id}')">
+                        <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">${currentSubject.toUpperCase()} · ${(index+1).toString().padStart(2, '0')}. Adım</span>
+                        <h3 class="text-base font-bold text-white group-hover:text-indigo-300 transition">${t.title}</h3>
+                        <p class="text-xs text-slate-400">${t.desc}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleSave('${t.id}')" class="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition" title="Kaydet">🔖</button>
+                        <button onclick="switchView('topic-detail', '${t.id}')" class="p-2 rounded-xl bg-indigo-600 text-white font-bold text-xs hover:bg-indigo-500 transition">→</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTopicDetailView(container, topicId) {
+            let topic = null;
+            for (let sub in TOPICS_DB) {
+                const found = TOPICS_DB[sub].find(t => t.id === topicId);
+                if (found) topic = found;
+            }
+            if (!topic) topic = TOPICS_DB.matematik[0];
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <button onclick="switchView('discover')" class="text-xs font-bold text-indigo-400 hover:underline">← Keşfet'e Dön</button>
+                    
+                    <div class="bg-slate-800/60 border border-slate-700 p-6 rounded-2xl space-y-4">
+                        <h1 class="text-2xl font-bold text-white">${topic.title}</h1>
+                        <p class="text-sm text-slate-300 leading-relaxed">${topic.content}</p>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700 p-6 rounded-2xl space-y-3">
+                        <h3 class="text-sm font-bold text-white">📹 Konu Anlatım Videosu</h3>
+                        <div class="relative bg-black rounded-xl overflow-hidden shadow-2xl aspect-video flex items-center justify-center border border-slate-700">
+                            <video id="activeVideo" class="w-full h-full object-cover" autoplay muted playsinline>
+                                <source src="${topic.video}" type="video/mp4">
+                                Tarayıcınız video oynatmayı desteklemiyor.
+                            </video>
+                            <div class="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 p-4 flex items-center justify-between">
+                                <button onclick="togglePlay()" id="playPauseBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-xs">⏸ Durdur</button>
+                                <button onclick="toggleFull()" class="bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-xs">⛶ Tam Ekran</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800/60 border border-slate-700 p-6 rounded-2xl space-y-4">
+                        <h3 class="text-lg font-bold text-white">✍️ Mini Test</h3>
+                        <p class="font-medium text-slate-200 text-sm">${topic.quiz.q}</p>
+                        <div class="grid gap-2">
+                            ${topic.quiz.opts.map((opt, i) => `
+                                <button onclick="answerQuiz(${i},${topic.quiz.correct})" class="text-left p-3 rounded-xl bg-slate-900 border border-slate-700 hover:border-indigo-500 font-medium text-sm text-slate-200 transition">
+                                    ${String.fromCharCode(65 + i)})${opt}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <p id="quizRes" class="text-sm font-bold hidden"></p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function togglePlay() {
+            const v = document.getElementById('activeVideo');
+            const btn = document.getElementById('playPauseBtn');
+            if (v.paused) { v.play(); btn.innerText = "⏸ Durdur"; }
+            else { v.pause(); btn.innerText = "▶ Oynat"; }
+        }
+
+        function toggleFull() {
+            const v = document.getElementById('activeVideo');
+            if (!document.fullscreenElement) v.requestFullscreen();
+            else document.exitFullscreen();
+        }
+
+        function answerQuiz(selected, correct) {
+            const res = document.getElementById('quizRes');
+            res.classList.remove('hidden');
+            if (selected === correct) {
+                res.className = "text-sm font-bold text-emerald-400 mt-2";
+                res.innerText = "🎉 Doğru cevap! Tebrikler.";
+                stats.solvedTests++;
+                stats.correctAnswers++;
+                checkBadges();
+                updateGoalProgress();
+                saveStats();
+            } else {
+                res.className = "text-sm font-bold text-rose-400 mt-2";
+                res.innerText = "❌ Yanlış cevap, tekrar deneyebilirsin.";
+            }
+        }
+
+        // MİNİ TESTLER SEKME FİLTRESİ
+        function renderTestsView(container) {
+            const topics = TOPICS_DB[testSubjectFilter] || [];
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <div>
+                            <h1 class="text-2xl font-bold text-white">Mini Testler</h1>
+                            <p class="text-xs text-slate-400">Seçtiğin derse ait testleri çözerek bilgini pekiştir.</p>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="setTestSubject('matematik')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition border ${testSubjectFilter === 'matematik' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}">Matematik</button>
+                            <button onclick="setTestSubject('fen')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition border ${testSubjectFilter === 'fen' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}">Fen Bilimleri</button>
+                            <button onclick="setTestSubject('turkce')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition border ${testSubjectFilter === 'turkce' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}">Türkçe</button>
+                            <button onclick="setTestSubject('sosyal')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition border ${testSubjectFilter === 'sosyal' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}">Sosyal Bilgiler</button>
+                            <button onclick="setTestSubject('inkilap')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition border ${testSubjectFilter === 'inkilap' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}">İnkılap</button>
+                            <button onclick="setTestSubject('ingilizce')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition border ${testSubjectFilter === 'ingilizce' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}">İngilizce</button>
+                            <button onclick="setTestSubject('din')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition border ${testSubjectFilter === 'din' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-400'}">Din</button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        ${topics.map(t => `
+                            <div class="bg-slate-800/40 border border-slate-700 p-5 rounded-2xl flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] text-indigo-400 font-bold uppercase">${testSubjectFilter.toUpperCase()} TESTİ</span>
+                                    <h3 class="text-base font-bold text-white">${t.title}</h3>
+                                </div>
+                                <button onclick="switchView('topic-detail', '${t.id}')" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition">Çöz →</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function setTestSubject(sub) {
+            testSubjectFilter = sub;
+            renderTestsView(document.getElementById('mainContent'));
+        }
+
+        function renderSavedView(container) {
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <h1 class="text-2xl font-bold text-white">Kaydettiğin Konular</h1>
+                    <p class="text-xs text-slate-400">Daha sonra tekrar gözden geçirmek için kaydettiğin içerikler.</p>
+                    ${savedTopics.length === 0 ? `
+                        <div class="bg-slate-800/30 border border-slate-800 rounded-2xl p-12 text-center space-y-3">
+                            <span class="text-3xl">🔖</span>
+                            <h3 class="text-base font-bold text-white">Henüz kayıtlı konu yok.</h3>
+                            <button onclick="switchView('discover')" class="px-5 py-2.5 bg-indigo-600 text-white font-bold text-xs rounded-xl">Konuları keşfet →</button>
+                        </div>
+                    ` : `<p class="text-xs text-slate-300">Toplam ${savedTopics.length} konu kaydedildi.</p>`}
+                </div>
+            `;
+        }
+
+        function toggleSave(id) {
+            if (!savedTopics.includes(id)) {
+                savedTopics.push(id);
+                alert("Konu kaydedildi!");
+            } else {
+                savedTopics = savedTopics.filter(item => item !== id);
+                alert("Konu kaydedilenlerden çıkarıldı.");
+            }
+            localStorage.setItem('dr_saved', JSON.stringify(savedTopics));
+        }
+
+        function renderProgressView(container) {
+            const accuracy = stats.solvedTests > 0 ? Math.round((stats.correctAnswers / stats.solvedTests) * 100) : 0;
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <div class="space-y-1">
+                        <span class="text-xs font-bold text-indigo-400">HER ADIMIN BİR DEĞERİ VAR</span>
+                        <h1 class="text-3xl font-extrabold text-white">Öğrenme yolculuğun</h1>
+                        <p class="text-xs text-slate-400">Küçük çabalarının bir araya geldiği yer.</p>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-slate-800/50 border border-slate-700/80 p-5 rounded-2xl space-y-2">
+                            <span class="text-indigo-400">📝</span>
+                            <strong class="block text-3xl font-extrabold text-white">${stats.solvedTests}</strong>
+                            <span class="text-xs text-slate-400">Tamamlanan test</span>
+                        </div>
+                        <div class="bg-slate-800/50 border border-slate-700/80 p-5 rounded-2xl space-y-2">
+                            <span class="text-emerald-400">🎯</span>
+                            <strong class="block text-3xl font-extrabold text-white">${stats.correctAnswers}</strong>
+                            <span class="text-xs text-slate-400">Doğru cevap</span>
+                        </div>
+                        <div class="bg-slate-800/50 border border-slate-700/80 p-5 rounded-2xl space-y-2">
+                            <span class="text-amber-400">🏆</span>
+                            <strong class="block text-3xl font-extrabold text-white">${accuracy}%</strong>
+                            <span class="text-xs text-slate-400">Doğruluk oranı</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderBadgesView(container) {
+            const allBadges = [
+                { id: 'badge1', icon: '🔥', title: 'İlk Seri', desc: 'Sisteme giriş yap ve seriyi başlat' },
+                { id: 'badge2', icon: '🎯', title: 'Test Ustası', desc: 'İlk mini testini başarıyla çöz' },
+                { id: 'badge3', icon: '📚', title: 'Bilgi Kurdu', desc: '3 farklı konuyu incele' },
+                { id: 'badge4', icon: '⚡', title: 'Şampiyon', desc: '3 doğru test yanıtına ulaş' },
+                { id: 'badge5', icon: '🌟', title: 'Yıldız Öğrenci', desc: '5 testi tamamla' },
+                { id: 'badge6', icon: '🧠', title: 'Süper Beyin', desc: '10 doğru yanıt ver' }
+            ];
+
+            container.innerHTML = `
+                <div class="space-y-6">
+                    <h1 class="text-2xl font-bold text-white">Başarı Rozetlerin</h1>
+                    <p class="text-xs text-slate-400">Hedeflere ulaştıkça rozetlerin otomatik olarak açılır.</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        ${allBadges.map((b, i) => {
+                            const isUnlocked = stats.badges.includes(b.id) || i === 0;
+                            return `
+                                <div class="p-5 rounded-2xl border flex flex-col items-center text-center space-y-2 transition ${isUnlocked ? 'bg-amber-950/20 border-amber-500/40 text-white shadow-lg' : 'bg-slate-800/30 border-slate-800 text-slate-500 opacity-40'}">
+                                    <span class="text-4xl">${b.icon}</span>
+                                    <strong class="text-sm font-bold">${b.title}</strong>
+                                    <span class="text-[11px] text-slate-400">${b.desc}</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${isUnlocked ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-500'}">
+                                        ${isUnlocked ? 'Kazanıldı ✓' : 'Kilitli 🔒'}
+                                    </span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function checkBadges() {
+            if (stats.solvedTests >= 1 && !stats.badges.includes('badge2')) stats.badges.push('badge2');
+            if (stats.solvedTests >= 3 && !stats.badges.includes('badge4')) stats.badges.push('badge4');
+            if (stats.solvedTests >= 5 && !stats.badges.includes('badge5')) stats.badges.push('badge5');
+            if (stats.correctAnswers >= 10 && !stats.badges.includes('badge6')) stats.badges.push('badge6');
+            saveStats();
+        }
+
+        function updateGoalProgress() {
+            const goalBar = document.getElementById('goalBar');
+            const goalStat = document.getElementById('goalStat');
+            if (goalBar && goalStat) {
+                const done = Math.min(stats.solvedTests, 1);
+                goalBar.style.width = (done * 100) + '%';
+                goalStat.innerText = `${done}/1`;
+            }
+        }
+
+        function saveStats() {
+            localStorage.setItem('dr_stats', JSON.stringify(stats));
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const label = document.getElementById('themeLabel');
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                label.innerText = "Açık tema";
+                body.style.backgroundColor = "#0b0f19";
+                body.style.color = "#f1f5f9";
+            } else {
+                body.classList.add('light-theme');
+                label.innerText = "Koyu tema";
+                body.style.backgroundColor = "#f8fafc";
+                body.style.color = "#1e293b";
+            }
+        }
+    </script>
+</body>
+</html>
